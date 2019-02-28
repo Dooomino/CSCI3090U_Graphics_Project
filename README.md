@@ -1,1 +1,1 @@
-# CSCI3090U_Graphics_Project
+# CSCI-3090U Graphics Project
