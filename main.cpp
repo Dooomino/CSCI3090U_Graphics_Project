@@ -14,7 +14,12 @@
 #include <algorithm>
 #include <sstream>
 
+#include "data.h"
+
 using namespace std;
+
+float width = 1366;
+float height = 768; 
 
 GLuint vertexArrayId;
 GLuint vertexBuffer;
@@ -105,12 +110,18 @@ void load(const std::string filename, const bool autoCentre = false, const bool 
 
 void mouse(GLFWwindow* window, int button, int action, int mods);
 void drag(GLFWwindow* window, double xpos, double ypos);
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-glm::mat4 drawPlanet(glm::mat4 moldel,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt);
+glm::mat4 drawPlanet(glm::mat4 moldel,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle);
 
 float rotate_angle=0.0f;
+float rotate_accel=0.0f;
+float xRotate=0.0f;
+float yRotate=0.0f;
+float zRotate=0.0f;
 float R_Factor=0.1f;
 float Fov = 20.0f;
+float animate_speed=2.0f;
 
 float scaleFactor = 10.0f;
 glm::quat rotation = glm::angleAxis(1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -123,6 +134,9 @@ glm::vec3 eyepos(0.0f,10.0f,20.0f);
 glm::mat4 Projection;
 glm::mat4 View;
 GLuint MatrixID;
+GLint numVertices;
+
+int QuartScroll = 0;
 
 int main(){
   if(!glfwInit()){
@@ -133,9 +147,10 @@ int main(){
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); 
-
+  glfwWindowHint(GLFW_SAMPLES, 4);
+  
   GLFWwindow* window;
-  window = glfwCreateWindow(800,600,"Hello",NULL,NULL);
+  window = glfwCreateWindow(width,height,"Hello",NULL,NULL);
 
   if (window == NULL)
   {
@@ -152,6 +167,7 @@ int main(){
     return -1;
   }
   // END INIT
+
   //Vetecies Buffer
   glGenVertexArrays(1,&vertexArrayId);
   glBindVertexArray(vertexArrayId);
@@ -178,6 +194,7 @@ int main(){
   glEnable(GL_DEPTH_TEST);  
   glDepthFunc(GL_LESS);
   glEnable(GL_CULL_FACE);
+  glEnable(GL_MULTISAMPLE); 
 
 
   glfwWaitEventsTimeout(1.0f);
@@ -185,13 +202,17 @@ int main(){
 
   glfwSetMouseButtonCallback(window,mouse);
   glfwSetCursorPosCallback(window,drag);
+  glfwSetKeyCallback(window,keyboard);
 
 
 
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   //Main loop
   while(!glfwWindowShouldClose(window)){
     //GLM
-    Projection = glm::perspective(glm::radians(45.0f), (float)800/ (float)600, 0.1f, 100.0f);
+    Projection = glm::perspective(glm::radians(45.0f), width/ height, 0.1f, 1000.0f);
+    
+    
 
     View = glm::lookAt(
       // glm::vec3(0,1*scaleFactor,1*scaleFactor), 
@@ -214,19 +235,50 @@ int main(){
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 mvp;
 
+    model = glm::rotate(model,yRotate,glm::vec3(1.0f,0.0f,0.0f));
+    model = glm::rotate(model,xRotate,glm::vec3(0.0f,1.0f,0.0f));
+    model = glm::rotate(model,zRotate,glm::vec3(0.0f,0.0f,1.0f));
+
+
     mvp = Projection*View*model;
     MatrixID = glGetUniformLocation(programid, "MVP");
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
 
     glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
     glDrawArrays(GL_TRIANGLES,0,12*3);
+	  // glDrawElements(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, (void*)0);
+    glm::mat4 models[9];
+
+    for (int i =0 ;i<9;i++){
+      int tilt=0;
+      float tiltang=0;
+      if(i==8){
+        tilt=1;
+        tiltang=45.0f;
+      }
+      if(planets[i].size<0.1){
+        models[i] =drawPlanet(model,rotate_angle*planets[i].speed*animate_speed,planets[i].period,planets[i].distance*10,planets[i].size+0.2,tilt,tiltang);        
+      }else
+      {
+        models[i] =drawPlanet(model,rotate_angle*planets[i].speed*animate_speed,planets[i].period,planets[i].distance*10,planets[i].size,tilt,tiltang);
+      }
+    }
+
+    glm::mat4 modelmoon = drawPlanet(models[2],rotate_angle*0.5f,2.0f,5.0f,0.3,0,0);
 
 
-    glm::mat4 model2 =drawPlanet(model,rotate_angle,2.0f,5.0f,0.2f,0);
-    glm::mat4 model3 = drawPlanet(model,2*rotate_angle,1.0f,7.0f,0.3f,0);
-    glm::mat4 model4 = drawPlanet(model,0.5*rotate_angle,0.0f,9.0f,0.2f,0);
-    glm::mat4 model5 = drawPlanet(model,0.3*rotate_angle,4.0f,12.0f,0.6f,0);
-    glm::mat4 model6 = drawPlanet(model,2*rotate_angle,1.0f,16.0f,0.1f,1);
+    // glm::mat4 model4 = drawPlanet(model,0.5*rotate_angle,0.0f,7.0f,0.2f,0,0);
+
+    // glm::mat4 model3 = drawPlanet(model,2*rotate_angle,1.0f,10.0f,0.3f,0,0);
+    // glm::mat4 moon= drawPlanet(model3,rotate_angle,1.0f,4.0f,0.3f,0,0);
+
+    // glm::mat4 model5 = drawPlanet(model,0.3*rotate_angle,4.0f,14.0f,0.6f,0,0);
+    // glm::mat4 model7 = drawPlanet(model,0.4*rotate_angle,4.0f,17.0f,0.6f,0,0);
+    // glm::mat4 model8 = drawPlanet(model,2*rotate_angle,1.0f,20.0f,0.1f,1,90.0f);
+
+    // glm::mat4 upper = drawPlanet(model,20*rotate_angle,1.0f,20.0f,0.5f,1,45.0f);
+    // glm::mat4 left  = drawPlanet(model,25*rotate_angle,1.0f,20.0f,0.5f,1,-45.0f);
+    // glm::mat4 right = drawPlanet(model,15*rotate_angle,1.0f,20.0f,0.5f,1,180.0f);
 
 
     glDisableVertexAttribArray(0);
@@ -234,8 +286,8 @@ int main(){
     glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0);     
     
 
-    rotate_angle+=0.01f;
-    if(rotate_angle>360){
+    rotate_angle+=0.01f+rotate_accel;
+    if(rotate_angle>360 || rotate_angle<0){
       rotate_angle=0;
     }
 
@@ -331,11 +383,11 @@ GLuint loadShaders(){
 
 } 
 
-glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt){
+glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle){
     glm::mat4 new_model;
    
     if(tilt==1){
-      new_model = glm::rotate(model,rotate_angle,glm::vec3(0.0f,1.0f,1.0f));
+      new_model = glm::rotate(model,rotate_angle,glm::vec3(0.0f,1.0f-tilt_angle/360.0f,tilt_angle/360.0f));
     }else{
       new_model = glm::rotate(model,rotate_angle,glm::vec3(0.0f,1.0f,0.0f));
     }
@@ -343,18 +395,22 @@ glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,
     new_model = glm::translate(new_model,glm::vec3(distance,0.0f,0.0f));
     new_model = glm::rotate(new_model,self_rotate_speed*rotate_angle,glm::vec3(0.0f,1.0f,0.0f));
     
-
     new_model = glm::scale(new_model,glm::vec3(size));
-
-
 
     glm::mat4 mvp = Projection*View*new_model;
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
+    // glDrawArrays(GL_LINES,0,12*3);
     glDrawArrays(GL_TRIANGLES,0,12*3);
+	  // glDrawElements(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, (void*)0);
+
     return new_model;
 }
 
-
+/**
+ * integrated from 
+ * https://github.com/randyfortier/CSCI3090U_Examples/tree/master/11b_TextureMapping_SkyBox_QuaternionTrackball
+ * Trackball.hpp
+*/
 glm::vec3 getTrackballVector(int x, int y, int width, int height) {
    glm::vec3 P = glm::vec3(1.0 * x / width * 2 - 1.0,
    	                     1.0 * y / height * 2 - 1.0,
@@ -368,7 +424,15 @@ glm::vec3 getTrackballVector(int x, int y, int width, int height) {
    }
    return P;
 }
-
+/**
+ * integrated from 
+ * https://github.com/randyfortier/CSCI3090U_Examples/tree/master/11b_TextureMapping_SkyBox_QuaternionTrackball
+ * Trackball.hpp
+ * 
+ * Normal: Axis View Rotaion
+ * Shift: Quaternion View Rotation 
+ * 
+*/
 void drag(GLFWwindow* window, double xpos, double ypos) {
    int width, height;
    glfwGetFramebufferSize(window, &width, &height);
@@ -394,35 +458,55 @@ void drag(GLFWwindow* window, double xpos, double ypos) {
             }
             printf("%f %f\n",scaleFactor,scaleChange);
             
-            
-              scaleFactor += scaleChange;
-         
-
+            scaleFactor += scaleChange;
+        
             lxpos = x;
             lypos = y;
          } else {
-            // trackball rotation (left button drag)
-            glm::vec3 a = getTrackballVector(lxpos, lypos, width, height);
-            glm::vec3 b = getTrackballVector(x, y, width, height);
+          if(QuartScroll == 0){
+            float dx = lxpos - (float)x;
+            float dy = lypos - (float)y;
 
-            float rotateSpeed = 1.0f;
-            float angle = 1.0f * -(float)acos(glm::dot(a, b) / glm::length(a) / glm::length(b));
+            float xrot = glm::abs(dx/100);
+            if(dx<0){
+              xRotate +=xrot;
+            } else{
+              xRotate -=xrot;
+            }            
 
-            if (!std::isnan(angle)) {
-            	glm::vec3 axis = glm::normalize(glm::cross(a, b));
+            float yrot = glm::abs(dy/100);             
+            if(dy<0){             
+              yRotate += yrot;
+            }else{
+              yRotate -= yrot;
+            }
+            
 
-            	if (std::isnan(axis.x) || std::isnan(axis.y) || std::isnan(axis.z)) {
-                  return;
-               }
+            lxpos = (float)x;
+            lypos = (float)y;
+          }else{
+              // trackball rotation (left button drag)
+              glm::vec3 a = getTrackballVector(lxpos, lypos, width, height);
+              glm::vec3 b = getTrackballVector(x, y, width, height);
 
-         	   angle *= rotateSpeed;
-               glm::quat quaternion = glm::angleAxis(angle, axis);
+              float rotateSpeed = 1.0f;
+              float angle = 1.0f * -(float)acos(glm::dot(a, b) / glm::length(a) / glm::length(b));
 
-               //glm::mat4 rotationMatrix = glm::mat4_cast(quaternion);
-         		eyepos = eyepos * quaternion;
+              if (!std::isnan(angle)) {
+                glm::vec3 axis = glm::normalize(glm::cross(a, b));
+                if (std::isnan(axis.x) || std::isnan(axis.y) || std::isnan(axis.z)) {
+                    return;
+                }
+                angle *= rotateSpeed;
+                glm::quat quaternion = glm::angleAxis(angle, axis);
 
-               lxpos = (float)x;
-               lypos = (float)y;
+                //glm::mat4 rotationMatrix = glm::mat4_cast(quaternion);
+                eyepos = eyepos * quaternion;
+                lxpos = (float)x;
+                lypos = (float)y;
+
+              }
+
             }
          }
       } else {
@@ -431,10 +515,32 @@ void drag(GLFWwindow* window, double xpos, double ypos) {
       }
    }
 }
-
+/**
+ * integrated from 
+ * https://github.com/randyfortier/CSCI3090U_Examples/tree/master/11b_TextureMapping_SkyBox_QuaternionTrackball
+ * Trackball.hpp
+*/
 void mouse(GLFWwindow* window, int button, int action, int mods) {
    if (action == GLFW_RELEASE) {
       lxpos = std::numeric_limits<float>::infinity();
       lypos = std::numeric_limits<float>::infinity();
    }
+}
+
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
+
+  if(action == GLFW_PRESS){
+    if(key == GLFW_KEY_RIGHT){
+      rotate_accel+=0.01f;
+    } else if(key == GLFW_KEY_LEFT){
+      rotate_accel-=0.01f;
+    }else if(key==GLFW_KEY_R){
+      rotate_accel=0.0f;
+    }else if(key==GLFW_KEY_LEFT_SHIFT || key==GLFW_KEY_RIGHT_SHIFT){
+      printf("Shift\n");
+      QuartScroll=1;
+    }
+  }else{
+    QuartScroll=0;
+  }
 }
