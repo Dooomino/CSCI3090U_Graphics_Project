@@ -1,0 +1,11 @@
+# Blender MTL File: 'None'
+# Material Count: 1
+
+newmtl None
+Ns 0
+Ka 0.000000 0.000000 0.000000
+Kd 0.8 0.8 0.8
+Ks 0.8 0.8 0.8
+d 1
+illum 2
+map_Kd /home/yudi/Desktop/kisspng-earth-texture-mapping-sphere-cube-mapping-5ae4a7e2425693.1720072315249346262717.jpg

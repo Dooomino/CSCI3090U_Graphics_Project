@@ -15,95 +15,14 @@
 #include <sstream>
 
 #include "data.h"
+#include "Model.h"
 
 using namespace std;
 
 float width = 1366;
 float height = 768; 
 
-GLuint vertexArrayId;
-GLuint vertexBuffer;
-
-GLuint colorArrayId;
-GLuint colorBuffer;
-
-GLfloat vertcies[] = {
-      -1.0f,-1.0f,-1.0f, // triangle 1 : begin
-    -1.0f,-1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f, // triangle 1 : end
-    1.0f, 1.0f,-1.0f, // triangle 2 : begin
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f, // triangle 2 : end
-    1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f // triangle 1 : end
-};
-
-static const GLfloat colorData[] = {
-    0.583f,  0.771f,  0.014f,
-    0.609f,  0.115f,  0.436f,
-    0.327f,  0.483f,  0.844f,
-    0.822f,  0.569f,  0.201f,
-    0.435f,  0.602f,  0.223f,
-    0.310f,  0.747f,  0.185f,
-    0.597f,  0.770f,  0.761f,
-    0.559f,  0.436f,  0.730f,
-    0.359f,  0.583f,  0.152f,
-    0.483f,  0.596f,  0.789f,
-    0.559f,  0.861f,  0.639f,
-    0.195f,  0.548f,  0.859f,
-    0.014f,  0.184f,  0.576f,
-    0.771f,  0.328f,  0.970f,
-    0.406f,  0.615f,  0.116f,
-    0.676f,  0.977f,  0.133f,
-    0.971f,  0.572f,  0.833f,
-    0.140f,  0.616f,  0.489f,
-    0.997f,  0.513f,  0.064f,
-    0.945f,  0.719f,  0.592f,
-    0.543f,  0.021f,  0.978f,
-    0.279f,  0.317f,  0.505f,
-    0.167f,  0.620f,  0.077f,
-    0.347f,  0.857f,  0.137f,
-    0.055f,  0.953f,  0.042f,
-    0.714f,  0.505f,  0.345f,
-    0.783f,  0.290f,  0.734f,
-    0.722f,  0.645f,  0.174f,
-    0.302f,  0.455f,  0.848f,
-    0.225f,  0.587f,  0.040f,
-    0.517f,  0.713f,  0.338f,
-    0.053f,  0.959f,  0.120f,
-    0.393f,  0.621f,  0.362f,
-    0.673f,  0.211f,  0.457f,
-    0.820f,  0.883f,  0.371f,
-    0.982f,  0.099f,  0.879f
-};
+// glm::vec3 normals;
 
 GLuint loadShaders();
 void load(const std::string filename, const bool autoCentre = false, const bool autoNormalize = false);
@@ -111,6 +30,8 @@ void load(const std::string filename, const bool autoCentre = false, const bool 
 void mouse(GLFWwindow* window, int button, int action, int mods);
 void drag(GLFWwindow* window, double xpos, double ypos);
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+void scroll(GLFWwindow* window,double xoff,double yoff);
 
 glm::mat4 drawPlanet(glm::mat4 moldel,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle);
 
@@ -127,16 +48,33 @@ float scaleFactor = 10.0f;
 glm::quat rotation = glm::angleAxis(1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
 float cameraDistance = 100.0f;
 
-double lxpos=800;
-double lypos=600;
+double lxpos=800,lypos=600;
+float lxscf=0.0f, lyscf=0.0f;
+float lx=0,lz=0;
 glm::vec3 eyepos(0.0f,10.0f,20.0f);
 
 glm::mat4 Projection;
 glm::mat4 View;
 GLuint MatrixID;
+GLuint ModelID;
+GLuint LightPosID;
+GLuint objcID;
+GLuint isSunID;
+
 GLint numVertices;
 
+GLuint vertexArrayId;
+GLuint vertexBuffer;
+GLuint colorArrayId;
+GLuint colorBuffer;
+
+std::vector< glm::vec3 > vertices;
+std::vector< glm::vec2 > uvs;
+std::vector< glm::vec3 > normals;
+
 int QuartScroll = 0;
+
+float scaleMulti = 2.0f;
 
 int main(){
   if(!glfwInit()){
@@ -168,21 +106,39 @@ int main(){
   }
   // END INIT
 
+  // load Model
+  // Model modeloder("Meshes/my_sphere.obj");
+  Model modeloder("Meshes/cube.obj");
+  // Model modeloder("Meshes/trous.obj");
+
+  modeloder.loadModel(vertices, uvs, normals);
+
   //Vetecies Buffer
   glGenVertexArrays(1,&vertexArrayId);
   glBindVertexArray(vertexArrayId);
 
   glGenBuffers(1,&vertexBuffer);
   glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
-  glBufferData(GL_ARRAY_BUFFER,sizeof(vertcies),vertcies,GL_STATIC_DRAW); 
+  glBufferData(GL_ARRAY_BUFFER,vertices.size() * sizeof(glm::vec3),&vertices[0],GL_STATIC_DRAW); 
   
-  //color Buffer
-  glGenVertexArrays(1,&colorArrayId);
-  glBindVertexArray(colorArrayId);
+  //Normal Buffer
+  GLuint normalBuffer;
+  glGenBuffers(1,&normalBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER,normalBuffer);
+  glBufferData(GL_ARRAY_BUFFER,normals.size() * sizeof(glm::vec3),&normals[0],GL_STATIC_DRAW);
 
-  glGenBuffers(1,&colorBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER,colorBuffer);
-  glBufferData(GL_ARRAY_BUFFER,sizeof(colorData),colorData,GL_STATIC_DRAW);
+  glEnableVertexAttribArray(2);
+  glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+  glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,0,(void*)0);
+
+
+  // //color Buffer
+  // glGenVertexArrays(1,&colorArrayId);
+  // glBindVertexArray(colorArrayId);
+
+  // glGenBuffers(1,&colorBuffer);
+  // glBindBuffer(GL_ARRAY_BUFFER,colorBuffer);
+  // glBufferData(GL_ARRAY_BUFFER,sizeof(colorData),colorData,GL_STATIC_DRAW);
 
   //Shaders
   GLuint programid = loadShaders();
@@ -191,7 +147,7 @@ int main(){
   glClearColor(0.0f,0.0f,0.0f,0.0f);
 
 
-  glEnable(GL_DEPTH_TEST);  
+  glEnable(GL_DEPTH_TEST); 
   glDepthFunc(GL_LESS);
   glEnable(GL_CULL_FACE);
   glEnable(GL_MULTISAMPLE); 
@@ -203,16 +159,13 @@ int main(){
   glfwSetMouseButtonCallback(window,mouse);
   glfwSetCursorPosCallback(window,drag);
   glfwSetKeyCallback(window,keyboard);
-
-
+  glfwSetScrollCallback(window,scroll);
 
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   //Main loop
   while(!glfwWindowShouldClose(window)){
     //GLM
     Projection = glm::perspective(glm::radians(45.0f), width/ height, 0.1f, 1000.0f);
-    
-    
 
     View = glm::lookAt(
       // glm::vec3(0,1*scaleFactor,1*scaleFactor), 
@@ -220,7 +173,6 @@ int main(){
       glm::vec3(0,0,0),
       glm::vec3(0,1,0) 
     );
-
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -235,51 +187,66 @@ int main(){
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 mvp;
 
-    model = glm::rotate(model,yRotate,glm::vec3(1.0f,0.0f,0.0f));
-    model = glm::rotate(model,xRotate,glm::vec3(0.0f,1.0f,0.0f));
-    model = glm::rotate(model,zRotate,glm::vec3(0.0f,0.0f,1.0f));
+    model = glm::rotate(model,xRotate,glm::vec3(1.0f,0.0f,0.0f));
+    model = glm::rotate(model,yRotate,glm::vec3(0.0f,1.0f,0.0f));
+    model = glm::scale(model,glm::vec3(scaleMulti));
+
+    // model = glm::rotate(model,zRotate,glm::vec3(0.0f,0.0f,1.0f));
+    // model = glm::translate(model,glm::vec3(0.0f,-2.0f,0.0f));
 
 
     mvp = Projection*View*model;
     MatrixID = glGetUniformLocation(programid, "MVP");
+    ModelID = glGetUniformLocation(programid, "model");
+    objcID = glGetUniformLocation(programid, "objColor");
+    LightPosID = glGetUniformLocation(programid, "lightPos");
+    isSunID = glGetUniformLocation(programid, "isSun");
+    
+
+    // glUniform3f(LightPosID,
+    // 20+glm::cos(glm::radians(lx))+glm::sin(glm::radians(lz)),
+    // 0,
+    // 20+-glm::sin(glm::radians(lx))+glm::cos(glm::radians(lz)));
+  
+    // lx+=0.5f;
+    // lz+=0.5f;
+    glUniform3f(LightPosID,0,10,-10);
+    glUniform3f(objcID,sunColor.x,sunColor.y,sunColor.z);
+
+    glUniform1i(isSunID,1);
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
+    // glUniformMatrix4fv(ModelID, 1, GL_FALSE, &model[0][0]);
 
     glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
-    glDrawArrays(GL_TRIANGLES,0,12*3);
-	  // glDrawElements(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, (void*)0);
+    
+    // glDrawArrays(GL_LINES,0,sizeof(float)*vertices.size()+2);
+    glDrawArrays(GL_TRIANGLES,0,sizeof(float)*vertices.size()+2);
+	  
+    
     glm::mat4 models[9];
 
     for (int i =0 ;i<9;i++){
       int tilt=0;
       float tiltang=0;
+      float dis = planets[i].distance*7;
+      float calc_rot_angle = rotate_angle*planets[i].speed*animate_speed;
+
+      glUniform3f(objcID,colorPlatte[i].x,colorPlatte[i].y,colorPlatte[i].z);
       if(i==8){
         tilt=1;
         tiltang=45.0f;
       }
       if(planets[i].size<0.1){
-        models[i] =drawPlanet(model,rotate_angle*planets[i].speed*animate_speed,planets[i].period,planets[i].distance*10,planets[i].size+0.2,tilt,tiltang);        
+        models[i] =drawPlanet(model,calc_rot_angle,planets[i].period,dis,planets[i].size+0.2,tilt,tiltang);        
       }else
       {
-        models[i] =drawPlanet(model,rotate_angle*planets[i].speed*animate_speed,planets[i].period,planets[i].distance*10,planets[i].size,tilt,tiltang);
+        models[i] =drawPlanet(model,calc_rot_angle,planets[i].period,dis,planets[i].size,tilt,tiltang);
       }
     }
 
     glm::mat4 modelmoon = drawPlanet(models[2],rotate_angle*0.5f,2.0f,5.0f,0.3,0,0);
 
-
-    // glm::mat4 model4 = drawPlanet(model,0.5*rotate_angle,0.0f,7.0f,0.2f,0,0);
-
-    // glm::mat4 model3 = drawPlanet(model,2*rotate_angle,1.0f,10.0f,0.3f,0,0);
-    // glm::mat4 moon= drawPlanet(model3,rotate_angle,1.0f,4.0f,0.3f,0,0);
-
-    // glm::mat4 model5 = drawPlanet(model,0.3*rotate_angle,4.0f,14.0f,0.6f,0,0);
-    // glm::mat4 model7 = drawPlanet(model,0.4*rotate_angle,4.0f,17.0f,0.6f,0,0);
-    // glm::mat4 model8 = drawPlanet(model,2*rotate_angle,1.0f,20.0f,0.1f,1,90.0f);
-
-    // glm::mat4 upper = drawPlanet(model,20*rotate_angle,1.0f,20.0f,0.5f,1,45.0f);
-    // glm::mat4 left  = drawPlanet(model,25*rotate_angle,1.0f,20.0f,0.5f,1,-45.0f);
-    // glm::mat4 right = drawPlanet(model,15*rotate_angle,1.0f,20.0f,0.5f,1,180.0f);
-
+    glUniformMatrix4fv(ModelID, 1, GL_FALSE, &model[0][0]);
 
     glDisableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
@@ -299,6 +266,35 @@ int main(){
   glfwTerminate();
   return 0;
 }
+
+glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle){
+    glm::mat4 new_model;
+    glUniform1i(isSunID,0);
+    if(tilt==1){
+      new_model = glm::rotate(model,rotate_angle,glm::vec3(0.0f,1.0f-tilt_angle/360.0f,tilt_angle/360.0f));
+    }else{
+      new_model = glm::rotate(model,rotate_angle,glm::vec3(0.0f,1.0f,0.0f));
+    }
+
+    new_model = glm::translate(new_model,glm::vec3(distance,0.0f,0.0f));
+    new_model = glm::rotate(new_model,self_rotate_speed*rotate_angle,glm::vec3(0.0f,1.0f,0.0f));
+    
+    new_model = glm::scale(new_model,glm::vec3(size));
+
+    glm::mat4 mvp = Projection*View*new_model;
+    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
+    glUniformMatrix4fv(ModelID, 1, GL_FALSE, &new_model[0][0]);
+    glDrawArrays(GL_TRIANGLES,0,sizeof(float)*vertices.size()+2);
+    // glDrawArrays(GL_LINES,0,sizeof(float)*vertices.size()+2);
+
+    return new_model;
+}
+
+/**
+ * integrated from 
+ * https://github.com/randyfortier/CSCI3090U_Examples/tree/master/11b_TextureMapping_SkyBox_QuaternionTrackball
+ * Trackball.hpp  ShaderProgram.cpp ShaderProgram.h
+*/
 
 GLuint loadShaders(){
   GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -383,33 +379,20 @@ GLuint loadShaders(){
 
 } 
 
-glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle){
-    glm::mat4 new_model;
-   
-    if(tilt==1){
-      new_model = glm::rotate(model,rotate_angle,glm::vec3(0.0f,1.0f-tilt_angle/360.0f,tilt_angle/360.0f));
-    }else{
-      new_model = glm::rotate(model,rotate_angle,glm::vec3(0.0f,1.0f,0.0f));
+void scroll(GLFWwindow* window,double xoff,double yoff){
+    float distance = yoff* yoff;
+    float scaleChange = distance * R_Factor*5;
+    if (yoff > 0.0f) {
+        scaleChange *= -1.0f;
     }
-
-    new_model = glm::translate(new_model,glm::vec3(distance,0.0f,0.0f));
-    new_model = glm::rotate(new_model,self_rotate_speed*rotate_angle,glm::vec3(0.0f,1.0f,0.0f));
-    
-    new_model = glm::scale(new_model,glm::vec3(size));
-
-    glm::mat4 mvp = Projection*View*new_model;
-    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
-    // glDrawArrays(GL_LINES,0,12*3);
-    glDrawArrays(GL_TRIANGLES,0,12*3);
-	  // glDrawElements(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, (void*)0);
-
-    return new_model;
+    scaleFactor += scaleChange;
 }
 
 /**
  * integrated from 
  * https://github.com/randyfortier/CSCI3090U_Examples/tree/master/11b_TextureMapping_SkyBox_QuaternionTrackball
  * Trackball.hpp
+ * 
 */
 glm::vec3 getTrackballVector(int x, int y, int width, int height) {
    glm::vec3 P = glm::vec3(1.0 * x / width * 2 - 1.0,
@@ -424,6 +407,7 @@ glm::vec3 getTrackballVector(int x, int y, int width, int height) {
    }
    return P;
 }
+
 /**
  * integrated from 
  * https://github.com/randyfortier/CSCI3090U_Examples/tree/master/11b_TextureMapping_SkyBox_QuaternionTrackball
@@ -468,17 +452,17 @@ void drag(GLFWwindow* window, double xpos, double ypos) {
             float dy = lypos - (float)y;
 
             float xrot = glm::abs(dx/100);
-            if(dx<0){
-              xRotate +=xrot;
+            if(dx>0){
+              yRotate +=xrot;
             } else{
-              xRotate -=xrot;
+              yRotate -=xrot;
             }            
 
             float yrot = glm::abs(dy/100);             
             if(dy<0){             
-              yRotate += yrot;
+              xRotate += yrot;
             }else{
-              yRotate -= yrot;
+              xRotate -= yrot;
             }
             
 
@@ -520,6 +504,7 @@ void drag(GLFWwindow* window, double xpos, double ypos) {
  * https://github.com/randyfortier/CSCI3090U_Examples/tree/master/11b_TextureMapping_SkyBox_QuaternionTrackball
  * Trackball.hpp
 */
+
 void mouse(GLFWwindow* window, int button, int action, int mods) {
    if (action == GLFW_RELEASE) {
       lxpos = std::numeric_limits<float>::infinity();
@@ -528,12 +513,11 @@ void mouse(GLFWwindow* window, int button, int action, int mods) {
 }
 
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
-
   if(action == GLFW_PRESS){
     if(key == GLFW_KEY_RIGHT){
-      rotate_accel+=0.01f;
+      rotate_accel+=0.005f;
     } else if(key == GLFW_KEY_LEFT){
-      rotate_accel-=0.01f;
+      rotate_accel-=0.005f;
     }else if(key==GLFW_KEY_R){
       rotate_accel=0.0f;
     }else if(key==GLFW_KEY_LEFT_SHIFT || key==GLFW_KEY_RIGHT_SHIFT){
