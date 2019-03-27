@@ -22,7 +22,7 @@ using namespace std;
 float width = 1366;
 float height = 768; 
 
-// glm::vec3 normals;
+float CamPosX =0.0f,CamPosY=0.0f,CamPosZ =0.0f;
 
 GLuint loadShaders();
 void load(const std::string filename, const bool autoCentre = false, const bool autoNormalize = false);
@@ -34,6 +34,10 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods);
 void scroll(GLFWwindow* window,double xoff,double yoff);
 
 glm::mat4 drawPlanet(glm::mat4 moldel,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle);
+
+void Setfocus(int planetNum);
+void resetCam();
+
 
 float rotate_angle=0.0f;
 float rotate_accel=0.0f;
@@ -73,6 +77,9 @@ std::vector< glm::vec2 > uvs;
 std::vector< glm::vec3 > normals;
 
 int QuartScroll = 0;
+int isFocus = 0;
+glm::vec3 originEye;
+int FocusOn_Num=0;
 
 float scaleMulti = 2.0f;
 
@@ -161,16 +168,20 @@ int main(){
   glfwSetKeyCallback(window,keyboard);
   glfwSetScrollCallback(window,scroll);
 
+  originEye =  Fov+eyepos+scaleFactor;
+
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   //Main loop
   while(!glfwWindowShouldClose(window)){
     //GLM
     Projection = glm::perspective(glm::radians(45.0f), width/ height, 0.1f, 1000.0f);
+    
+    Setfocus(FocusOn_Num);
 
     View = glm::lookAt(
       // glm::vec3(0,1*scaleFactor,1*scaleFactor), 
       Fov+eyepos+scaleFactor, 
-      glm::vec3(0,0,0),
+      glm::vec3(CamPosX,CamPosY,CamPosZ),
       glm::vec3(0,1,0) 
     );
 
@@ -378,7 +389,6 @@ GLuint loadShaders(){
 	return ProgramID;
 
 } 
-
 void scroll(GLFWwindow* window,double xoff,double yoff){
     float distance = yoff* yoff;
     float scaleChange = distance * R_Factor*5;
@@ -387,7 +397,6 @@ void scroll(GLFWwindow* window,double xoff,double yoff){
     }
     scaleFactor += scaleChange;
 }
-
 /**
  * integrated from 
  * https://github.com/randyfortier/CSCI3090U_Examples/tree/master/11b_TextureMapping_SkyBox_QuaternionTrackball
@@ -510,21 +519,108 @@ void mouse(GLFWwindow* window, int button, int action, int mods) {
       lxpos = std::numeric_limits<float>::infinity();
       lypos = std::numeric_limits<float>::infinity();
    }
+   if(action==GLFW_PRESS){ 
+    if(button==GLFW_MOUSE_BUTTON_LEFT && QuartScroll==0){
+      resetCam();
+    }
+   }
 }
 
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
-  if(action == GLFW_PRESS){
+  if(action == GLFW_REPEAT){
+    if(key == GLFW_KEY_RIGHT){
+      rotate_accel+=0.005f;
+    } else if(key == GLFW_KEY_LEFT){
+      rotate_accel-=0.005f;
+    }
+  }else if(action == GLFW_PRESS){
     if(key == GLFW_KEY_RIGHT){
       rotate_accel+=0.005f;
     } else if(key == GLFW_KEY_LEFT){
       rotate_accel-=0.005f;
     }else if(key==GLFW_KEY_R){
       rotate_accel=0.0f;
+    }else if(key==GLFW_KEY_F){
+      printf("Focus ");
+      if(isFocus==0){
+        resetCam();
+        isFocus=1;
+        printf("On\n");
+      }else{
+        resetCam();
+        isFocus=0;
+        printf("Off\n");
+      }
+    }else if(key==GLFW_KEY_KP_EQUAL){
+      resetCam();
     }else if(key==GLFW_KEY_LEFT_SHIFT || key==GLFW_KEY_RIGHT_SHIFT){
       printf("Shift\n");
       QuartScroll=1;
+    }else{
+      switch (key){
+        case GLFW_KEY_1:
+          FocusOn_Num=1;
+          break;
+        case GLFW_KEY_2:
+          FocusOn_Num=2;
+          break;
+        case GLFW_KEY_3:
+          FocusOn_Num=3;
+          break;
+        case GLFW_KEY_4:
+          FocusOn_Num=4;
+          break;
+        case GLFW_KEY_5:
+          FocusOn_Num=5;
+          break;
+        case GLFW_KEY_6:
+          FocusOn_Num=6;
+          break;
+        case GLFW_KEY_7:
+          FocusOn_Num=7;
+          break;
+        case GLFW_KEY_8:
+          FocusOn_Num=8;
+          break;
+        case GLFW_KEY_9:
+          FocusOn_Num=9;
+          break;
+        default:
+          FocusOn_Num=0;
+          break;
+      }
     }
   }else{
     QuartScroll=0;
   }
+}
+
+void Setfocus(int planetNum){
+  if(isFocus==1){
+    float dis = planets[planetNum-1].distance*7;
+    float calc_rot_angle = rotate_angle*planets[planetNum-1].speed*animate_speed;
+    CamPosX = dis*glm::cos(-calc_rot_angle-xRotate)*scaleMulti;
+    CamPosZ = dis*glm::sin(-calc_rot_angle)*scaleMulti;
+  }else{
+    CamPosX=0;
+    CamPosY=0;
+    CamPosZ=0;
+  }
+}
+
+void resetCam(){
+  CamPosX=0;
+  CamPosZ=0;
+  CamPosY=0;
+  View = glm::lookAt(
+    // glm::vec3(0,1*scaleFactor,1*scaleFactor), 
+    originEye, 
+    glm::vec3(CamPosX,CamPosY,CamPosZ),
+    glm::vec3(0,1,0) 
+  );
+  xRotate=0;
+  yRotate=0;
+  zRotate=0;
+  FocusOn_Num=0;
+  isFocus=0;
 }
