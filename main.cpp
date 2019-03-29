@@ -1,6 +1,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "apis/stb_image.h"
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,7 +18,8 @@
 #include <sstream>
 
 #include "data.h"
-#include "Model.h"
+// #include "Model.h"
+#include "ObjMesh.h"
 
 using namespace std;
 
@@ -58,19 +62,6 @@ glm::vec3 cubic(GLfloat t,float x,float y){
       );
 }
 
-
-void drawCircle(float r)
-{   
-  glColor4f(1.0f,1.0f,1.0f,1.0f);
-  glBegin(GL_LINES);
-  for (int i=0; i < 360; i++){
-    float d = i*M_2_PI;
-    glVertex3f(cos(d)*r,0.0f,sin(d)*r);
-  }
-  glEnd();
-  glFlush();
-}
-
 // Initial data;
 
 
@@ -87,6 +78,7 @@ float zRotate=0.0f;
 float R_Factor=0.1f;
 float Fov = 20.0f;
 float animate_speed=2.0f;
+int ispause=0;
 
 float scaleFactor = 10.0f;
 glm::quat rotation = glm::angleAxis(1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -110,15 +102,24 @@ GLint numVertices;
 
 GLuint vertexArrayId;
 GLuint normalBuffer;
+GLuint uvBuffer;
 GLuint vertexBuffer;
+GLuint EBO;
 
-std::vector< glm::vec3 > vertices;
-std::vector< glm::vec2 > uvs;
-std::vector< glm::vec3 > normals;
+GLuint texture;
 
-std::vector< glm::vec3 > sky_vertices;
-std::vector< glm::vec2 > sky_uvs;
-std::vector< glm::vec3 > sky_normals;
+
+// Model modeloder;
+ObjMesh mesh;
+
+glm::vec3* vertices;
+glm::vec2* uvs;
+glm::vec3* normals;
+unsigned int* indices;
+
+// std::vector< glm::vec3 > sky_vertices;
+// std::vector< glm::vec2 > sky_uvs;
+// std::vector< glm::vec3 > sky_normals;
 
 
 int QuartScroll = 0;
@@ -129,6 +130,69 @@ int FocusOn_Num=0;
 float scaleMulti = 2.0f;
 // float scaleMulti = 20.0f;
 
+float sunRotate =0.2f;
+
+void CreateGeometry(){
+  numVertices = mesh.getNumIndexedVertices();
+
+  vertices = mesh.getIndexedPositions();
+  uvs = mesh.getIndexedTextureCoords();
+  normals = mesh.getIndexedNormals();
+  indices = mesh.getTriangleIndices();
+
+  glGenVertexArrays(1,&vertexArrayId);
+  glBindVertexArray(vertexArrayId);
+  //Vetfecies Buffer
+  glGenBuffers(1,&vertexBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
+  glBufferData(GL_ARRAY_BUFFER,numVertices * sizeof(glm::vec3),vertices,GL_STATIC_DRAW); 
+  
+  //UVs
+  glGenBuffers(1,&uvBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER,uvBuffer);
+  glBufferData(GL_ARRAY_BUFFER,numVertices * sizeof(glm::vec2),uvs,GL_STATIC_DRAW);
+
+  //Normal Buffer
+  glGenBuffers(1,&normalBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER,normalBuffer);
+  glBufferData(GL_ARRAY_BUFFER,numVertices * sizeof(glm::vec3),normals,GL_STATIC_DRAW);
+ 
+
+  glGenBuffers(1,&EBO);
+  glBindBuffer(GL_ARRAY_BUFFER,EBO);
+  glBufferData(GL_ARRAY_BUFFER,numVertices*sizeof(unsigned int)*3,&indices[0],GL_STATIC_DRAW);
+
+  // for( int i =0 ;i<indices.size();i++){
+  //   printf("%d: %d\n",i,indices[i]);
+  // }
+
+}
+
+void CreateTexture(){
+  glGenTextures(1,&texture);
+  glBindTexture(GL_TEXTURE_2D,texture);
+
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  int width, height, channels;
+  // stbi_set_flip_vertically_on_load(true);
+  unsigned char *img = stbi_load("texture/Pearth.jpg", &width, &height, &channels, 0);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, img);
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  stbi_image_free(img);
+}
+
+
+
 int main(){
   if(!glfwInit()){
     fprintf( stderr, "Failed to initialize GLFW\n" );
@@ -137,8 +201,8 @@ int main(){
 
   glViewport(0, 0, width, height);
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); 
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); 
   glfwWindowHint(GLFW_SAMPLES, 4);
   
@@ -162,16 +226,11 @@ int main(){
   // END INIT
 
   // load Model
-  // Model modeloder("Meshes/my_sphere.obj");
-  Model modeloder("Meshes/cube.obj");
-  // Model modeloder("Meshes/box.obj");
-  // Model modeloder("Meshes/trous.obj");
-
-  Model modeloder2("Meshes/box.obj");
-
-  modeloder.loadModel(vertices, uvs, normals);
-  modeloder2.loadModel(sky_vertices, sky_uvs, sky_normals);
-
+ 
+  mesh.load("Meshes/cube.obj",true,true);
+  // mesh.load("Meshes/my_sphere.obj",false,true);
+  // mesh.load("Meshes/Tree.obj",false,true);
+  
   //Shaders
   GLuint programid = loadShaders();
   glUseProgram(programid);
@@ -194,19 +253,9 @@ int main(){
 
   originEye =  Fov+eyepos+scaleFactor;
 
+  CreateGeometry();
 
-  glGenVertexArrays(1,&vertexArrayId);
-  glBindVertexArray(vertexArrayId);
-  //Vetecies Buffer
-  glGenBuffers(1,&vertexBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
-  glBufferData(GL_ARRAY_BUFFER,vertices.size() * sizeof(glm::vec3),&vertices[0],GL_DYNAMIC_DRAW); 
-  
-  //Normal Buffer
-  glGenBuffers(1,&normalBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER,normalBuffer);
-  glBufferData(GL_ARRAY_BUFFER,normals.size() * sizeof(glm::vec3),&normals[0],GL_DYNAMIC_DRAW);
-  
+  CreateTexture();
 
   //Main loop
   while(!glfwWindowShouldClose(window)){
@@ -232,8 +281,18 @@ int main(){
       glfwSetWindowShouldClose(window,true);
     }
 
-    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
     glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,(void*)0);  
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER,normalBuffer);
+    glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0); 
+    glEnableVertexAttribArray(1); 
+
+    glBindBuffer(GL_ARRAY_BUFFER,uvBuffer);
+    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,0,(void*)0); 
+    glEnableVertexAttribArray(2); 
 
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 mvp;
@@ -241,7 +300,7 @@ int main(){
     model = glm::rotate(model,xRotate,glm::vec3(1.0f,0.0f,0.0f));
     model = glm::rotate(model,yRotate,glm::vec3(0.0f,1.0f,0.0f));
     model = glm::scale(model,glm::vec3(scaleMulti));
-
+    model = glm::rotate(model,0.2f*rotate_angle,glm::vec3(0.0f,1.0f,0.0f));
     // model = glm::rotate(model,zRotate,glm::vec3(0.0f,0.0f,1.0f));
     // model = glm::translate(model,glm::vec3(0.0f,-2.0f,0.0f));
 
@@ -271,10 +330,15 @@ int main(){
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
     // glUniformMatrix4fv(ModelID, 1, GL_FALSE, &model[0][0]);
 
-    glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
-    
-    // glDrawArrays(GL_LINES,0,sizeof(float)*vertices.size()+2);
-    glDrawArrays(GL_TRIANGLES,0,sizeof(float)*vertices.size()+2);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    // glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,EBO);
+  
+    // glDrawArrays(GL_TRIANGLES,0,sizeof(glm::vec3)*vertices.size());
+    // glDrawArrays(GL_QUADS,0,sizeof(glm::vec3)*vertices.size());
+    glDrawElements(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, (void*)0);
 	  
     
     glm::mat4 models[9];
@@ -285,10 +349,11 @@ int main(){
       float dis = planets[i].distance*7;
       float calc_rot_angle = rotate_angle*planets[i].speed*animate_speed;
 
-      // if(i==2){
-      //   CamPosX = dis*cos(calc_rot_angle);
-      //   CamPosZ = dis*sin(calc_rot_angle);
-      // }
+      if(i==2){
+        glUniform1i(isSunID,2);
+      }else{
+        glUniform1i(isSunID,0);
+      }
 
       glUniform3f(ObjcID,colorPlatte[i].x,colorPlatte[i].y,colorPlatte[i].z);
       if(i==8){
@@ -307,24 +372,25 @@ int main(){
 
     // glUniformMatrix4fv(ModelID, 1, GL_FALSE, &model[0][0]);
 
-    glDisableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0);     
+
+    glDisableVertexAttribArray(0);  
+    glDisableVertexAttribArray(1);  
+    glDisableVertexAttribArray(2);  
+
     
-
-
     //Update
-    if(rotate_accel>=0.2f){
-      rotate_accel=0.2f;
-    }else if(rotate_accel<=-0.2f){
-      rotate_accel=-0.2f;      
-    }
+    if(ispause==0){
+      if(rotate_accel>=0.2f){
+        rotate_accel=0.2f;
+      }else if(rotate_accel<=-0.2f){
+        rotate_accel=-0.2f;      
+      }
 
-    rotate_angle+=0.01f+rotate_accel;
-    if(rotate_angle>360 || rotate_angle<0){
-      rotate_angle=0;
+      rotate_angle+=0.001f+rotate_accel;
+      if(rotate_angle>360 || rotate_angle<0){
+        rotate_angle=0;
+      }
     }
-
 
     if(steps>=1.0f){
       stepsInvert=1;
@@ -348,8 +414,6 @@ int main(){
 
 glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle){
     glm::mat4 new_model;
-    glUniform1i(isSunID,0);
-    drawCircle(distance);
 
     if(tilt==1){
       new_model = glm::rotate(model,rotate_angle,glm::vec3(0.0f,1.0f-tilt_angle/360.0f,tilt_angle/360.0f));
@@ -365,8 +429,14 @@ glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,
     glm::mat4 mvp = Projection*View*new_model;
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
     glUniformMatrix4fv(ModelID, 1, GL_FALSE, &new_model[0][0]);
-    glDrawArrays(GL_TRIANGLES,0,sizeof(float)*vertices.size()+2);
-    // glDrawArrays(GL_LINES,0,sizeof(float)*vertices.size()+2);
+
+    // glDrawArrays(GL_TRIANGLES,0,36);
+    // glDrawArrays(GL_TRIANGLES,0,36);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,EBO);
+
+    glDrawElements(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, 0);
+
+    // glDrawArrays(GL_LINES,0,sizeof(float)*vertices.size()*3);
 
     return new_model;
 }
@@ -383,7 +453,7 @@ GLuint loadShaders(){
 
   std::string vShaderSource;
   std::string vLine;
-	std::ifstream Vertexfile("shader/vertex.fx", std::ios::in);
+	std::ifstream Vertexfile("shader/vertex.glsl", std::ios::in);
 	if(Vertexfile.is_open()){
 		 while (getline(Vertexfile, vLine)) {
       vShaderSource.append(vLine);
@@ -396,7 +466,7 @@ GLuint loadShaders(){
 
   std::string fShaderSource;
   std::string fLine;
-	std::ifstream Fragfile("shader/frag.fx", std::ios::in);
+	std::ifstream Fragfile("shader/frag.glsl", std::ios::in);
 	if(Fragfile.is_open()){
 		 while (getline(Fragfile, fLine)) {
       fShaderSource.append(fLine);
@@ -623,6 +693,12 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
       }
     }else if(key==GLFW_KEY_KP_EQUAL){
       resetCam();
+    }else if(key==GLFW_KEY_P){
+      if(ispause==0){
+        ispause=1;
+      }else{
+        ispause=0;
+      }
     }else if(key==GLFW_KEY_C){
       if(cubicAnimation==0){
         cubicAnimation=1;
@@ -679,7 +755,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
 void Setfocus(int planetNum){
   if(isFocus==1){
     float dis = planets[planetNum-1].distance*7;
-    float calc_rot_angle = rotate_angle*planets[planetNum-1].speed*animate_speed;
+    float calc_rot_angle = rotate_angle*planets[planetNum-1].speed*animate_speed+sunRotate*rotate_angle;
     CamPosX = dis*glm::cos(-calc_rot_angle-xRotate)*scaleMulti;
     CamPosZ = dis*glm::sin(-calc_rot_angle)*scaleMulti;
   }else{
