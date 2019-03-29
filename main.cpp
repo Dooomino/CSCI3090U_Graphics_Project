@@ -19,10 +19,14 @@
 
 using namespace std;
 
+//Scene Factors;
+
 float width = 1366;
 float height = 768; 
 
 float CamPosX =0.0f,CamPosY=0.0f,CamPosZ =0.0f;
+
+//pre-defined Functions
 
 GLuint loadShaders();
 void load(const std::string filename, const bool autoCentre = false, const bool autoNormalize = false);
@@ -30,14 +34,50 @@ void load(const std::string filename, const bool autoCentre = false, const bool 
 void mouse(GLFWwindow* window, int button, int action, int mods);
 void drag(GLFWwindow* window, double xpos, double ypos);
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods);
-
 void scroll(GLFWwindow* window,double xoff,double yoff);
+void resize(GLFWwindow* window, int w,int h);
 
 glm::mat4 drawPlanet(glm::mat4 moldel,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle);
 
 void Setfocus(int planetNum);
 void resetCam();
 
+glm::vec3 cubic(GLfloat t,float x,float y){
+    float p0 =0.0f;
+    float p3 =1.0f;
+
+		float a1 = (1.0 - t)*(1.0 - t)*(1.0 - t);
+    float a2 = (1.0 - t)*(1.0 - t)* 3.0 * t;
+    float a3 = 3.0 * t*t*(1.0 - t);
+    float a4 = t*t*t;
+
+    return glm::vec3(
+      a1*p0+ a2*x + a3*y + a4*p3,
+      a1*p3+ a2*y + a3*x + a4*p0,
+      -(a1*y + a2*p0+ a3*p3+ a4*x)+1
+      );
+}
+
+
+void drawCircle(float r)
+{   
+  glColor4f(1.0f,1.0f,1.0f,1.0f);
+  glBegin(GL_LINES);
+  for (int i=0; i < 360; i++){
+    float d = i*M_2_PI;
+    glVertex3f(cos(d)*r,0.0f,sin(d)*r);
+  }
+  glEnd();
+  glFlush();
+}
+
+// Initial data;
+
+
+float steps=0.0f;
+int stepsInvert = 0.0f;
+int cubicAnimation=0;
+float colorpos=0.0f;
 
 float rotate_angle=0.0f;
 float rotate_accel=0.0f;
@@ -55,26 +95,31 @@ float cameraDistance = 100.0f;
 double lxpos=800,lypos=600;
 float lxscf=0.0f, lyscf=0.0f;
 float lx=0,lz=0;
-glm::vec3 eyepos(0.0f,10.0f,20.0f);
+glm::vec3 eyepos(0.0f,10.0f,10.0f);
 
 glm::mat4 Projection;
 glm::mat4 View;
 GLuint MatrixID;
 GLuint ModelID;
 GLuint LightPosID;
-GLuint objcID;
+GLuint ObjcID;
+GLuint LightcID;
 GLuint isSunID;
 
 GLint numVertices;
 
 GLuint vertexArrayId;
+GLuint normalBuffer;
 GLuint vertexBuffer;
-GLuint colorArrayId;
-GLuint colorBuffer;
 
 std::vector< glm::vec3 > vertices;
 std::vector< glm::vec2 > uvs;
 std::vector< glm::vec3 > normals;
+
+std::vector< glm::vec3 > sky_vertices;
+std::vector< glm::vec2 > sky_uvs;
+std::vector< glm::vec3 > sky_normals;
+
 
 int QuartScroll = 0;
 int isFocus = 0;
@@ -82,12 +127,15 @@ glm::vec3 originEye;
 int FocusOn_Num=0;
 
 float scaleMulti = 2.0f;
+// float scaleMulti = 20.0f;
 
 int main(){
   if(!glfwInit()){
     fprintf( stderr, "Failed to initialize GLFW\n" );
     return -1;
   }
+
+  glViewport(0, 0, width, height);
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -116,36 +164,13 @@ int main(){
   // load Model
   // Model modeloder("Meshes/my_sphere.obj");
   Model modeloder("Meshes/cube.obj");
+  // Model modeloder("Meshes/box.obj");
   // Model modeloder("Meshes/trous.obj");
 
+  Model modeloder2("Meshes/box.obj");
+
   modeloder.loadModel(vertices, uvs, normals);
-
-  //Vetecies Buffer
-  glGenVertexArrays(1,&vertexArrayId);
-  glBindVertexArray(vertexArrayId);
-
-  glGenBuffers(1,&vertexBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
-  glBufferData(GL_ARRAY_BUFFER,vertices.size() * sizeof(glm::vec3),&vertices[0],GL_STATIC_DRAW); 
-  
-  //Normal Buffer
-  GLuint normalBuffer;
-  glGenBuffers(1,&normalBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER,normalBuffer);
-  glBufferData(GL_ARRAY_BUFFER,normals.size() * sizeof(glm::vec3),&normals[0],GL_STATIC_DRAW);
-
-  glEnableVertexAttribArray(2);
-  glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-  glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,0,(void*)0);
-
-
-  // //color Buffer
-  // glGenVertexArrays(1,&colorArrayId);
-  // glBindVertexArray(colorArrayId);
-
-  // glGenBuffers(1,&colorBuffer);
-  // glBindBuffer(GL_ARRAY_BUFFER,colorBuffer);
-  // glBufferData(GL_ARRAY_BUFFER,sizeof(colorData),colorData,GL_STATIC_DRAW);
+  modeloder2.loadModel(sky_vertices, sky_uvs, sky_normals);
 
   //Shaders
   GLuint programid = loadShaders();
@@ -159,20 +184,34 @@ int main(){
   glEnable(GL_CULL_FACE);
   glEnable(GL_MULTISAMPLE); 
 
-
   glfwWaitEventsTimeout(1.0f);
-
 
   glfwSetMouseButtonCallback(window,mouse);
   glfwSetCursorPosCallback(window,drag);
   glfwSetKeyCallback(window,keyboard);
   glfwSetScrollCallback(window,scroll);
+  glfwSetWindowSizeCallback(window, resize);
 
   originEye =  Fov+eyepos+scaleFactor;
 
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  glGenVertexArrays(1,&vertexArrayId);
+  glBindVertexArray(vertexArrayId);
+  //Vetecies Buffer
+  glGenBuffers(1,&vertexBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER,vertexBuffer);
+  glBufferData(GL_ARRAY_BUFFER,vertices.size() * sizeof(glm::vec3),&vertices[0],GL_DYNAMIC_DRAW); 
+  
+  //Normal Buffer
+  glGenBuffers(1,&normalBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER,normalBuffer);
+  glBufferData(GL_ARRAY_BUFFER,normals.size() * sizeof(glm::vec3),&normals[0],GL_DYNAMIC_DRAW);
+  
+
   //Main loop
   while(!glfwWindowShouldClose(window)){
+    //draw solar model
+
     //GLM
     Projection = glm::perspective(glm::radians(45.0f), width/ height, 0.1f, 1000.0f);
     
@@ -185,6 +224,7 @@ int main(){
       glm::vec3(0,1,0) 
     );
 
+    // printf("%f\n",rotate_accel);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -205,24 +245,27 @@ int main(){
     // model = glm::rotate(model,zRotate,glm::vec3(0.0f,0.0f,1.0f));
     // model = glm::translate(model,glm::vec3(0.0f,-2.0f,0.0f));
 
-
+    //get Ids
     mvp = Projection*View*model;
     MatrixID = glGetUniformLocation(programid, "MVP");
     ModelID = glGetUniformLocation(programid, "model");
-    objcID = glGetUniformLocation(programid, "objColor");
+    ObjcID = glGetUniformLocation(programid, "objColor");
+    LightcID = glGetUniformLocation(programid, "lightColor");
     LightPosID = glGetUniformLocation(programid, "lightPos");
     isSunID = glGetUniformLocation(programid, "isSun");
     
+    //Light color
+    if(cubicAnimation==1){
+      glm::vec3 dcolor = cubic(steps,colorpos,1.0f-colorpos);
+      glUniform3f(LightcID,dcolor.x,dcolor.y,dcolor.z);
+    }
+    else{
+      glUniform3f(LightcID,1.0f,1.0f,1.0f);
+    }
 
-    // glUniform3f(LightPosID,
-    // 20+glm::cos(glm::radians(lx))+glm::sin(glm::radians(lz)),
-    // 0,
-    // 20+-glm::sin(glm::radians(lx))+glm::cos(glm::radians(lz)));
-  
-    // lx+=0.5f;
-    // lz+=0.5f;
-    glUniform3f(LightPosID,0,10,-10);
-    glUniform3f(objcID,sunColor.x,sunColor.y,sunColor.z);
+
+    glUniform3f(LightPosID,0,0,0);
+    glUniform3f(ObjcID,sunColor.x,sunColor.y,sunColor.z);
 
     glUniform1i(isSunID,1);
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
@@ -242,7 +285,12 @@ int main(){
       float dis = planets[i].distance*7;
       float calc_rot_angle = rotate_angle*planets[i].speed*animate_speed;
 
-      glUniform3f(objcID,colorPlatte[i].x,colorPlatte[i].y,colorPlatte[i].z);
+      // if(i==2){
+      //   CamPosX = dis*cos(calc_rot_angle);
+      //   CamPosZ = dis*sin(calc_rot_angle);
+      // }
+
+      glUniform3f(ObjcID,colorPlatte[i].x,colorPlatte[i].y,colorPlatte[i].z);
       if(i==8){
         tilt=1;
         tiltang=45.0f;
@@ -257,18 +305,38 @@ int main(){
 
     glm::mat4 modelmoon = drawPlanet(models[2],rotate_angle*0.5f,2.0f,5.0f,0.3,0,0);
 
-    glUniformMatrix4fv(ModelID, 1, GL_FALSE, &model[0][0]);
+    // glUniformMatrix4fv(ModelID, 1, GL_FALSE, &model[0][0]);
 
     glDisableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0);     
     
 
+
+    //Update
+    if(rotate_accel>=0.2f){
+      rotate_accel=0.2f;
+    }else if(rotate_accel<=-0.2f){
+      rotate_accel=-0.2f;      
+    }
+
     rotate_angle+=0.01f+rotate_accel;
     if(rotate_angle>360 || rotate_angle<0){
       rotate_angle=0;
     }
 
+
+    if(steps>=1.0f){
+      stepsInvert=1;
+    }else if(steps<=0.0f){
+      stepsInvert=0;    
+    }
+
+    if(stepsInvert==0){
+      steps+=0.01f;
+    }else{
+      steps-=0.01f;
+    }
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -281,6 +349,8 @@ int main(){
 glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle){
     glm::mat4 new_model;
     glUniform1i(isSunID,0);
+    drawCircle(distance);
+
     if(tilt==1){
       new_model = glm::rotate(model,rotate_angle,glm::vec3(0.0f,1.0f-tilt_angle/360.0f,tilt_angle/360.0f));
     }else{
@@ -473,7 +543,6 @@ void drag(GLFWwindow* window, double xpos, double ypos) {
             }else{
               xRotate -= yrot;
             }
-            
 
             lxpos = (float)x;
             lypos = (float)y;
@@ -506,6 +575,8 @@ void drag(GLFWwindow* window, double xpos, double ypos) {
          lxpos = (float)x;
          lypos = (float)y;
       }
+   }else{
+      colorpos=0.3f+0.7f/glm::abs(xpos/width);
    }
 }
 /**
@@ -513,25 +584,24 @@ void drag(GLFWwindow* window, double xpos, double ypos) {
  * https://github.com/randyfortier/CSCI3090U_Examples/tree/master/11b_TextureMapping_SkyBox_QuaternionTrackball
  * Trackball.hpp
 */
-
 void mouse(GLFWwindow* window, int button, int action, int mods) {
    if (action == GLFW_RELEASE) {
       lxpos = std::numeric_limits<float>::infinity();
       lypos = std::numeric_limits<float>::infinity();
    }
    if(action==GLFW_PRESS){ 
-    if(button==GLFW_MOUSE_BUTTON_LEFT && QuartScroll==0){
-      resetCam();
-    }
+    // if(button==GLFW_MOUSE_BUTTON_LEFT && QuartScroll==0){
+    //   resetCam();
+    // }
    }
 }
 
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
   if(action == GLFW_REPEAT){
     if(key == GLFW_KEY_RIGHT){
-      rotate_accel+=0.005f;
+      rotate_accel+=0.0001f;
     } else if(key == GLFW_KEY_LEFT){
-      rotate_accel-=0.005f;
+      rotate_accel-=0.0001f;
     }
   }else if(action == GLFW_PRESS){
     if(key == GLFW_KEY_RIGHT){
@@ -553,6 +623,13 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
       }
     }else if(key==GLFW_KEY_KP_EQUAL){
       resetCam();
+    }else if(key==GLFW_KEY_C){
+      if(cubicAnimation==0){
+        cubicAnimation=1;
+      }else{
+        cubicAnimation=0;
+        steps=0;
+      }
     }else if(key==GLFW_KEY_LEFT_SHIFT || key==GLFW_KEY_RIGHT_SHIFT){
       printf("Shift\n");
       QuartScroll=1;
@@ -591,7 +668,11 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
       }
     }
   }else{
-    QuartScroll=0;
+    if(isFocus==0){
+      QuartScroll=0;
+    }else{
+      QuartScroll=1;
+    }
   }
 }
 
@@ -606,6 +687,10 @@ void Setfocus(int planetNum){
     CamPosY=0;
     CamPosZ=0;
   }
+}
+
+void resize(GLFWwindow* window, int w,int h){
+  glViewport(0, 0, w, h);
 }
 
 void resetCam(){

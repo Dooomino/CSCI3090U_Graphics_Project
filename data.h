@@ -8,6 +8,7 @@ struct Planet
   float period;
 };
 
+
 using namespace std;
 
 Planet planets[] = 
@@ -18,9 +19,9 @@ Planet planets[] =
 // VENUS
   {0.06f,1.53f,1.26f,0.0f},
 // EARTH
-  {0.06f,2.27f,1.07f,0.42f},
+  {0.06f,2.00f,1.07f,0.42f},
 // MARS
-  {0.03f,2.46f,0.87f,0.41f},
+  {0.03f,2.56f,0.87f,0.41f},
 // JUPITER
   {0.69f,2.89f,0.47f,1.01f},
 // SATURN

@@ -1,6 +1,7 @@
 #version 330 core
 uniform vec3 lightPos;
 uniform vec3 objColor;
+uniform vec3 lightColor;
 uniform int isSun;
 
 out vec4 color;
@@ -8,7 +9,7 @@ in vec3 normal;
 in vec3 FragPos; 
 
 void main(){
-  vec3 lightColor = vec3(1.0,1.0,1.0);
+  // vec3 lightColor = vec3(1.0,1.0,1.0);
   if(isSun == 0){
     // vec3 objColor = vec3(0.0,0.5,1.0); 
 

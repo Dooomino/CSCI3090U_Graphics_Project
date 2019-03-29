@@ -1,6 +1,6 @@
 #include "Model.h"
 
-
+Model::Model(){}
 Model::Model(const char * path){
   file = fopen(path,"r");
   if( file == NULL ){
@@ -17,7 +17,6 @@ vector<glm::vec3>  & out_normals)
   std::vector< glm::vec3 > vertices;
   std::vector< glm::vec2 > uvs;
   std::vector< glm::vec3 > normals;
-  int count=0;
   while(true){
     char line[256];
     int res = fscanf(file, "%s", line);
@@ -57,21 +56,34 @@ vector<glm::vec3>  & out_normals)
       normalIndices.push_back(normalIndex[0]);
       normalIndices.push_back(normalIndex[1]);
       normalIndices.push_back(normalIndex[2]);
+
+      this->numberVertices++;
     }  
-    count++; 
   }
+
+  // printf("Out count %d size %d\n",count,vertexIndices.size());
+  this->numberVIndexices = this->numberVertices*3;
 
   for(unsigned int i=0;i<vertexIndices.size();i++){
     unsigned int vertexIndex=vertexIndices[i];
     glm::vec3 vertex = vertices[vertexIndex-1];
-    out_vertices.push_back(vertex);
+    this->vertices.push_back(vertex);
 
     unsigned int uvIndex=uvIndices[i];
     glm::vec2 uv = uvs[uvIndex-1];
-    out_uvs.push_back(uv);
+    this->uvs.push_back(uv);
 
     unsigned int normalIndex=normalIndices[i];
     glm::vec3 normal = normals[vertexIndex-1];
-    out_normals.push_back(normal);
+    this->normals.push_back(normal);
   }
+
+  for (unsigned int i = 0; i < this->numberVIndexices; i++) {
+    this->vertexIndeices.push_back(i);
+  }
+
+  out_vertices=this->vertices;
+  out_uvs=this->uvs;
+  out_normals=this->normals;
+
 }

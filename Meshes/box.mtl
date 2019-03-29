@@ -1,0 +1,13 @@
+# Blender MTL File: 'project.blend'
+# Material Count: 1
+
+newmtl Material
+Ns 686.274510
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/yudi/Desktop/kisspng-skybox-texture-mapping-cube-mapping-night-sky-5afec04faa7684.4522080515266448156982.jpg

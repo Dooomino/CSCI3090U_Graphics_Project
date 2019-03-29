@@ -13,6 +13,14 @@ class Model
 private:
   FILE* file;
 public:
+  std::vector< glm::vec3 > vertices;
+  std::vector< glm::vec2 > uvs;
+  std::vector< glm::vec3 > normals;
+  std::vector< unsigned int> vertexIndeices;
+  
+  unsigned int numberVertices;
+  unsigned int numberVIndexices;
+  Model();
   Model(const char * path);
   void loadModel( 
   vector<glm::vec3>  & out_vertices,
