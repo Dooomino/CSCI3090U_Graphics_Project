@@ -20,3 +20,151 @@ $ cd <project folder>
 $ nmake /f Nmakefile.Windows
 $ main
 ```
+
+## Function
+#### CreateGeometry Function
+This function can create the basic geometry of the solar system.
+```
+void CreateGeometry(){
+  numVertices = mesh.getNumIndexedVertices();
+
+  vertices = mesh.getIndexedPositions();
+  uvs = mesh.getIndexedTextureCoords();
+  normals = mesh.getIndexedNormals();
+  indices = mesh.getTriangleIndices();
+
+....
+
+  glGenBuffers(1,&EBO);
+  glBindBuffer(GL_ARRAY_BUFFER,EBO);
+  glBufferData(GL_ARRAY_BUFFER,numVertices*sizeof(unsigned int)*3,&indices[0],GL_STATIC_DRAW);
+}
+```
+
+#### CreateTexture Function
+This function can create the texture of the planet
+```
+void CreateTexture(){
+  glGenTextures(1,&texture);
+  glBindTexture(GL_TEXTURE_2D,texture);
+
+.....
+
+  stbi_image_free(img);
+}
+```
+
+#### drawPlanet Fuction
+This function can draw the planet of the solar system.
+```
+glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle){
+
+.....
+
+}
+````
+
+#### loadShaders Function
+This function can load the shader for every planet.
+```
+GLuint loadShaders(){
+  GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+  GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+  
+  .....
+  
+    glDetachShader(ProgramID, VertexShaderID);
+	glDetachShader(ProgramID, FragmentShaderID);
+
+	glDeleteShader(VertexShaderID);
+	glDeleteShader(FragmentShaderID);
+
+	return ProgramID;
+} 
+```
+
+#### scroll Function
+This function can let solar system can scroll.
+```
+void scroll(GLFWwindow* window,double xoff,double yoff){
+    float distance = yoff* yoff;
+    float scaleChange = distance * R_Factor*5;
+    if (yoff > 0.0f) {
+        scaleChange *= -1.0f;
+    }
+    scaleFactor += scaleChange;
+}
+```
+
+#### getTrackballVector Function
+This function can get the vector by track the ball.
+```
+glm::vec3 getTrackballVector(int x, int y, int width, int height) {
+   glm::vec3 P = glm::vec3(1.0 * x / width * 2 - 1.0,
+   	                     1.0 * y / height * 2 - 1.0,
+   	                     0);
+   P.y = -P.y;
+   float OP_squared = P.x * P.x + P.y * P.y;
+   if (OP_squared <= 1 * 1) {
+      P.z = sqrt(1 * 1 - OP_squared);  // Pythagoras
+   } else {
+      P = glm::normalize(P);  // nearest point
+   }
+   return P;
+}
+```
+
+#### drag Function
+This function can make the solar system can drag by mouse.
+```
+void drag(GLFWwindow* window, double xpos, double ypos) {
+
+...
+
+}
+```
+
+#### keyboard Function
+This function can make the solar system can reflect by the keyboard input.
+```
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
+
+...
+
+}
+```
+
+#### Setfocus Function
+This function can set the focus when open the solar system.
+```
+void Setfocus(int planetNum){
+  if(isFocus==1){
+    float dis = planets[planetNum-1].distance*7;
+    float calc_rot_angle = rotate_angle*planets[planetNum-1].speed*animate_speed+sunRotate*rotate_angle;
+    CamPosX = dis*glm::cos(-calc_rot_angle-xRotate)*scaleMulti;
+    CamPosZ = dis*glm::sin(-calc_rot_angle)*scaleMulti;
+  }else{
+    CamPosX=0;
+    CamPosY=0;
+    CamPosZ=0;
+  }
+}
+````
+
+#### resize Function
+This function can resize the window.
+```
+void resize(GLFWwindow* window, int w,int h){
+  glViewport(0, 0, w, h);
+}
+```
+
+#### resetCam Function
+This function can reset the camera.
+```
+void resetCam(){
+
+...
+
+}
+```
