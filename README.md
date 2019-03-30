@@ -14,11 +14,18 @@ C++ openGL
 Our project is about a Flatend solar system. it will show how the planet revolves around the sun.
 
 ## How to run the project
+- Windows:
 ```sh
 $ git clone https://github.com/Dooomino/CSCI3090U_Graphics_Project
 $ cd <project folder>
 $ nmake /f Nmakefile.Windows
-$ main
+$ main.exe
+```
+- Linux：
+```sh
+$ git clone https://github.com/Dooomino/CSCI3090U_Graphics_Project
+$ cd <project folder>
+$ make
 ```
 ## Controls:
 
