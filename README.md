@@ -30,7 +30,7 @@ $ main
 - Key: [ **1 - 9** ] set the foucus planet from **Sun** to **Pluto**.
 - Key: [ **F**] toggle ***Focus mode***. 
 - Key: [ **=** ] reset camera position.
-- Key: [ **⟵ & ⟶** ] adjust rotaion speed.
+- Key: [ **⟵ & ⟶** ] adjust rotation speed.
 - Key: [ **P** ] pause the animation.
 - Key: [ **R** ] reset the inital animation speed.
 - Key: [ **C** ] ***DISCO MODE***( Using Cubic Bezier:) )
