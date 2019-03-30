@@ -11,7 +11,7 @@ C++ openGL
 > **Open Graphics Library (OpenGL)** is a cross-language, cross-platform application programming interface (API) for rendering 2D and 3D vector graphics. The API is typically used to interact with a graphics processing unit (GPU), to achieve hardware-accelerated rendering.
 
 ## About project
-Our project is about a solar system. it will show how the planet revolves around the sun.
+Our project is about a Flatend solar system. it will show how the planet revolves around the sun.
 
 ## How to run the project
 ```sh
@@ -20,10 +20,26 @@ $ cd <project folder>
 $ nmake /f Nmakefile.Windows
 $ main
 ```
+## Controls:
+
+- Mouse: **Scroll Up/Down** Zoom in/out.
+- Mouse: **Left button Drag** rotate by **Axis**.
+- Mouse+Key: [**SHIFT**]+**Left button Drag** rotate in **Quaternion** mode.
+- Mouse: **Right button Drag** Zoom in/out.
+
+- Key: [ **1 - 9** ] set the foucus planet from **Sun** to **Pluto**.
+- Key: [ **F**] toggle ***Focus mode***. 
+- Key: [ **=** ] reset camera position.
+- Key: [ ** ⟵ & ⟶** ] adjust rotaion speed.
+- Key: [ **P** ] pause the animation.
+- Key: [ **R** ] reset the inital animation speed.
+- Key: [ **C** ] ***DISCO MODE***( Using Cubic Bezier:) )
 
 ## Function
 #### CreateGeometry Function
-This function can create the basic geometry of the solar system.
+This function create the basic geometry of the solar system. 
+
+
 ```
 void CreateGeometry(){
   numVertices = mesh.getNumIndexedVertices();
@@ -42,7 +58,7 @@ void CreateGeometry(){
 ```
 
 #### CreateTexture Function
-This function can create the texture of the planet
+This function create the texture of the planet
 ```
 void CreateTexture(){
   glGenTextures(1,&texture);
@@ -55,7 +71,7 @@ void CreateTexture(){
 ```
 
 #### drawPlanet Fuction
-This function can draw the planet of the solar system.
+This function draw the planet of the solar system.
 ```
 glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,float distance,float size,int tilt,float tilt_angle){
 
@@ -84,7 +100,7 @@ GLuint loadShaders(){
 ```
 
 #### scroll Function
-This function can let solar system can scroll.
+This function can let solar system scaling on mouse scroll.
 ```
 void scroll(GLFWwindow* window,double xoff,double yoff){
     float distance = yoff* yoff;
@@ -97,7 +113,7 @@ void scroll(GLFWwindow* window,double xoff,double yoff){
 ```
 
 #### getTrackballVector Function
-This function can get the vector by track the ball.
+This function can get the trackball vector.
 ```
 glm::vec3 getTrackballVector(int x, int y, int width, int height) {
    glm::vec3 P = glm::vec3(1.0 * x / width * 2 - 1.0,
@@ -115,7 +131,7 @@ glm::vec3 getTrackballVector(int x, int y, int width, int height) {
 ```
 
 #### drag Function
-This function can make the solar system can drag by mouse.
+This function can make the solar system draged by mouse.
 ```
 void drag(GLFWwindow* window, double xpos, double ypos) {
 
@@ -125,7 +141,7 @@ void drag(GLFWwindow* window, double xpos, double ypos) {
 ```
 
 #### keyboard Function
-This function can make the solar system can reflect by the keyboard input.
+This function perform different function on solar system.
 ```
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
 
@@ -135,7 +151,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods){
 ```
 
 #### Setfocus Function
-This function can set the focus when open the solar system.
+This function can set the focus on specific planet.
 ```
 void Setfocus(int planetNum){
   if(isFocus==1){
@@ -152,7 +168,7 @@ void Setfocus(int planetNum){
 ````
 
 #### resize Function
-This function can resize the window.
+This function resize the solar system while resize the window.
 ```
 void resize(GLFWwindow* window, int w,int h){
   glViewport(0, 0, w, h);
@@ -160,7 +176,7 @@ void resize(GLFWwindow* window, int w,int h){
 ```
 
 #### resetCam Function
-This function can reset the camera.
+This function resets the camera.
 ```
 void resetCam(){
 
@@ -168,3 +184,12 @@ void resetCam(){
 
 }
 ```
+
+## The reference codes:
+- [ObjMesh.cpp](https://github.com/randyfortier/CSCI3090U_Examples/blob/master/04a_ParametricPrimitives_Sphere/ObjMesh.cpp)
+- [ObjMesh.h](https://github.com/randyfortier/CSCI3090U_Examples/blob/master/04a_ParametricPrimitives_Sphere/ObjMesh.h)
+- [loadShaders()](https://github.com/randyfortier/CSCI3090U_Examples/blob/master/04a_ParametricPrimitives_Sphere/ShaderProgram.cpp)
+- [TrackBall.hpp](https://github.com/randyfortier/CSCI3090U_Examples/blob/master/04a_ParametricPrimitives_Sphere/ObjMesh.cpp):
+	- getTrackballVector()
+	- drag()
+ 	- mouse()
