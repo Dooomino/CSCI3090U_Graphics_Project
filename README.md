@@ -1,7 +1,7 @@
 # CSCI-3090U Graphics Project
 ## Author：
-- Chen Pi(chen.pi@uoit.net)
-- Yudi Tao(yudi.tao@uoit.net)
+- Chen Pi(chen.pi@ontariotechu.net)
+- Yudi Tao(yudi.tao@ontariotechu.net)
 
 ## Time :
 03/29/2019
