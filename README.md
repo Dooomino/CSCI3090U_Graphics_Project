@@ -15,7 +15,7 @@ C++ openGL
 > **Open Graphics Library (OpenGL)** is a cross-language, cross-platform application programming interface (API) for rendering 2D and 3D vector graphics. The API is typically used to interact with a graphics processing unit (GPU), to achieve hardware-accelerated rendering.
 
 ## About project
-Our project is about a Flatend Cubic solar system. it will show how the planet revolves around the sun.
+Our project is about to making a Flatend Cubic solar system. it will show how the planet revolves around the sun.
 
 ## How to Build and Run the project
 - Windows:
@@ -34,16 +34,15 @@ $ make
 ## Controls:
 
 - Mouse: **Scroll Up/Down** Zoom in/out.
-- Mouse: **Left button Drag** rotate by **Axis**.
-- Mouse+Key: [**SHIFT**]+**Left button Drag**rotate in **Quaternion** mode.
+- Mouse: **Left button Drag** Rotate by **Axis**.
+- Mouse+Key: [**SHIFT**]+**Left button Drag**Rotate in **Quaternion** mode.
 - Mouse: **Right button Drag** Zoom in/out.
-
-- Key: [ **1 - 9** ] set the foucus planet from **Sun** to **Pluto**.
-- Key: [ **F**] toggle ***Focus mode***. 
-- Key: [ **=** ] reset camera position.
-- Key: [ **⟵** & **⟶** ] adjust rotation speed.
-- Key: [ **P** ] pause the animation.
-- Key: [ **R** ] reset the inital animation speed.
+- Key: [ **1 - 9** ] Set the foucus planet from **Sun** to **Pluto**.
+- Key: [ **F**] Toggle ***Focus mode***. 
+- Key: [ **=** ] Reset camera position.
+- Key: [ **⟵** & **⟶** ] Adjust rotation speed.
+- Key: [ **P** ] Pause the animation.
+- Key: [ **R** ] Reset to the inital animation speed.
 - Key: [ **C** ] ***DISCO MODE***( Using Cubic Bezier:) )
 
 ## Function
@@ -92,7 +91,7 @@ glm::mat4 drawPlanet(glm::mat4 model,float rotate_angle,float self_rotate_speed,
 ````
 
 #### loadShaders Function
-This function can load the shader for every planet.
+This function is loading the shader for every planet.
 ```
 GLuint loadShaders(){
   GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -124,7 +123,7 @@ void scroll(GLFWwindow* window,double xoff,double yoff){
 ```
 
 #### getTrackballVector Function
-This function can get the trackball vector.
+This function is getting the trackball vector for camera rotaion.
 ```
 glm::vec3 getTrackballVector(int x, int y, int width, int height) {
    glm::vec3 P = glm::vec3(1.0 * x / width * 2 - 1.0,
@@ -142,7 +141,7 @@ glm::vec3 getTrackballVector(int x, int y, int width, int height) {
 ```
 
 #### drag Function
-This function can make the solar system draged by mouse.
+This function can make the solar system rotate by mouse.
 ```
 void drag(GLFWwindow* window, double xpos, double ypos) {
 
