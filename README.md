@@ -17,7 +17,7 @@ C++ openGL
 ## About project
 Our project is about a Flatend Cubic solar system. it will show how the planet revolves around the sun.
 
-## How to run the project
+## How to Build and Run the project
 - Windows:
 ```sh
 $ git clone https://github.com/Dooomino/CSCI3090U_Graphics_Project
