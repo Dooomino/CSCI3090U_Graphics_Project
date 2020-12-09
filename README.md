@@ -3,15 +3,19 @@
 - Chen Pi(chen.pi@ontariotechu.net)
 - Yudi Tao(yudi.tao@ontariotechu.net)
 
-## Time :
+## Create Time :
 03/29/2019
+
+## Screenshots:
+![image1](/images/screenshot_2.png)
+![image2](/images/screenshot_1.png)
 
 ## Language :
 C++ openGL
 > **Open Graphics Library (OpenGL)** is a cross-language, cross-platform application programming interface (API) for rendering 2D and 3D vector graphics. The API is typically used to interact with a graphics processing unit (GPU), to achieve hardware-accelerated rendering.
 
 ## About project
-Our project is about a Flatend solar system. it will show how the planet revolves around the sun.
+Our project is about a Flatend Cubic solar system. it will show how the planet revolves around the sun.
 
 ## How to run the project
 - Windows:
@@ -31,7 +35,7 @@ $ make
 
 - Mouse: **Scroll Up/Down** Zoom in/out.
 - Mouse: **Left button Drag** rotate by **Axis**.
-- Mouse+Key: [**SHIFT**]+**Left button Drag** rotate in **Quaternion** mode.
+- Mouse+Key: [**SHIFT**]+**Left button Drag**rotate in **Quaternion** mode.
 - Mouse: **Right button Drag** Zoom in/out.
 
 - Key: [ **1 - 9** ] set the foucus planet from **Sun** to **Pluto**.
